@@ -10,7 +10,6 @@ from urllib import error, request
 location = '/etc/unbound/unbound.conf.d/adblock/'
 
 
-
 def is_valid_hostname(hostname):
     if hostname.endswith("."):
         hostname = hostname[:-1]
@@ -25,11 +24,11 @@ def is_valid_hostname(hostname):
     return all(allowed.match(x) for x in hostname.split("."))
 
 
-def download_block_list(url):
+def download_list(url):
     print(('\t:: URL Download: ' + url))
 
     req = request.Request(url)
-    req.add_header('User-Agent', 'Mozilla/5.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/5.0)')
+    req.add_header('User-Agent', 'NoFrillsAdblocker; github; pass')
 
     contents = ''
     decode = True
@@ -56,8 +55,8 @@ def download_block_list(url):
             return contents.decode(encoding='ISO-8859-1')
 
 
-def process_block_list(list_id, contents):
-    if contents == None:
+def process_list(list_id, contents):
+    if contents is None:
         return None
 
     redirect = '0.0.0.0'
@@ -116,17 +115,17 @@ def process_block_list(list_id, contents):
 
 
 def main():
-    block_list_count = 0
+    list_count = 0
 
     for key, value in sorted(json.load(open('blocklist.json')).items()):
         print(('\n' + key))
-        block_list_raw = download_block_list(value['url'])
+        list_raw = download_list(value['url'])
 
-        if block_list_raw != None:
-            block_list_processed = process_block_list(value['id'], block_list_raw)
-            block_list_count += block_list_processed
+        if list_raw is not None:
+            list_processed = process_list(value['id'], list_raw)
+            list_count += list_processed
 
-    print('Total blocklist size: ' + str(block_list_count) + '\n')
+    print('Total blocklist size: ' + str(list_count) + '\n')
 
     print('Checking configuration...')
     os.system('/usr/sbin/unbound-checkconf')
