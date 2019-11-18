@@ -125,7 +125,7 @@ def main():
             list_processed = process_list(value['id'], list_raw)
             list_count += list_processed
 
-    print('Total blocklist size: ' + str(list_count) + '\n')
+    print('\nTotal blocklist size: ' + str(list_count) + '\n')
 
     print('Checking configuration...')
     os.system('/usr/sbin/unbound-checkconf')
