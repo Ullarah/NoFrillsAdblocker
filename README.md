@@ -16,7 +16,7 @@ Run it manually, or run the script through your favourite job scheduler.
 
 Running example...
 ```
-~/$ sudo ./unbound-update.py
+~/$ sudo ./adblock-update.py
 
 Blocklist Project - Ads
 	:: URL Download: https://blocklist.site/app/dl/ads
