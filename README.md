@@ -14,7 +14,23 @@ Run it manually, or run the script through your favourite job scheduler.
 
 ***
 
-Running example...
+```
+usage: adblock-update [-h] [-q] [-f] [-Sh] [-Su] [-Au ALT_UNBOUND] [-Ab ALT_BLOCKLIST] [-u USER_AGENT]
+
+optional arguments:
+  -h,  --help                                       Show this help message and exit
+  -q,  --quiet                                      Quiet output
+  -f,  --force                                      Force blocklist download
+  -Sh, --skip-hints                                 Skip root.hints download
+  -Su, --skip-unbound                               Skip unbound service update
+  -Au ALT_UNBOUND,   --alt-unbound ALT_UNBOUND      Use alternative unbound directory
+  -Ab ALT_BLOCKLIST, --alt-blocklist ALT_BLOCKLIST  Use alternative blocklist json file
+  -u USER_AGENT,     --user-agent USER_AGENT        Use a different user agent for downloads
+```
+
+***
+
+Running example
 ```
 ~/$ sudo ./adblock-update.py
 
