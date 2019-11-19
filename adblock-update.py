@@ -187,36 +187,36 @@ if __name__ == '__main__':
     a_parser = argparse.ArgumentParser(prog='adblock-update')
 
     a_parser.add_argument('-q', '--quiet',
-                            action='store_true',
-                            help='quiet output')
+                          action='store_true',
+                          help='quiet output')
 
     a_parser.add_argument('-f', '--force',
-                            action='store_true',
-                            help='force blocklist download')
+                          action='store_true',
+                          help='force blocklist download')
 
     a_parser.add_argument('-Sh', '--skip-hints',
-                            action='store_true',
-                            help='skip root.hints download')
+                          action='store_true',
+                          help='skip root.hints download')
 
     a_parser.add_argument('-Su', '--skip-unbound',
-                            action='store_true',
-                            help='skip unbound service update')
+                          action='store_true',
+                          help='skip unbound service update')
 
     a_parser.add_argument('-Au', '--alt-unbound',
-                            action='store', type=str,
-                            help='use alternative unbound directory')
+                          action='store', type=str,
+                          help='use alternative unbound directory')
 
     a_parser.add_argument('-Ab', '--alt-blocklist',
-                            action='store', type=str,
-                            help='use alternative blocklist json file')
+                          action='store', type=str,
+                          help='use alternative blocklist json file')
 
     a_parser.add_argument('-Ah', '--alt-hints-url',
-                            action='store', type=str,
-                            help='use alternative root hints url')
+                          action='store', type=str,
+                          help='use alternative root hints url')
 
     a_parser.add_argument('-u', '--user-agent',
-                            action='store', type=str,
-                            help='use a different user agent for downloads')
+                          action='store', type=str,
+                          help='use a different user agent for downloads')
 
     args = a_parser.parse_args()
 
@@ -232,7 +232,7 @@ if __name__ == '__main__':
         list_json = args.alt_blocklist
 
     if args.alt_hints_url is not None:
-         root_hints_url = args.alt_hints_url
+        root_hints_url = args.alt_hints_url
 
     if args.user_agent is not None:
         user_agent = args.user_agent
