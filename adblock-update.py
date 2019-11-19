@@ -11,7 +11,13 @@ from math import floor
 from urllib import error, request
 
 
+is_verbose = True
 location = '/etc/unbound/unbound.conf.d/adblock/'
+
+
+def verbose(message):
+    if is_verbose:
+        print(message)
 
 
 def is_valid_hostname(hostname):
@@ -38,7 +44,7 @@ def is_recent(list_id):
 
 
 def download_list(url):
-    print(('\t:: URL Download: ' + url))
+    verbose(('\t:: URL Download: ' + url))
 
     req = request.Request(url)
     req.add_header('User-Agent', 'NoFrillsAdblocker; github; pass')
@@ -53,13 +59,13 @@ def download_list(url):
     except error.URLError as e:
         decode = False
         if hasattr(e, 'reason'):
-            print('\t:: Failed to reach a server')
-            print('\t:: Reason:', e.reason)
+            verbose('\t:: Failed to reach a server')
+            verbose('\t:: Reason:', e.reason)
         elif hasattr(e, 'code'):
-            print('\t:: The server could not fulfill the request')
-            print('\t:: Error:', e.code)
+            verbose('\t:: The server could not fulfill the request')
+            verbose('\t:: Error:', e.code)
         else:
-            print('\t:: Unknown Error')
+            verbose('\t:: Unknown Error')
 
     if decode:
         try:
@@ -76,8 +82,8 @@ def process_list(list_id, contents):
     filename = list_id + '.domain.conf'
     output = str(contents)
 
-    print('\t:: Parsing domains')
-    print('\t\t:: Stripping unnecessary sections')
+    verbose('\t:: Parsing domains')
+    verbose('\t\t:: Stripping unnecessary sections')
 
     for o in ['::', '0.0.0.0', '127.0.0.1']:
         output = re.sub(o, '', output)
@@ -95,7 +101,7 @@ def process_list(list_id, contents):
     for i in range(999):
         list_output = [x for x in list_output if x != f"ff{i:03}"]
 
-    print('\t\t:: Sorting domain list')
+    verbose('\t\t:: Sorting domain list')
 
     list_output = [_f for _f in list_output if _f]
     list_output = list(set(list_output))
@@ -103,10 +109,10 @@ def process_list(list_id, contents):
     list_output = list(filter(is_valid_hostname, list_output))
     list_output = sorted(list_output, key=str.lower)
 
-    print('\t\t:: Parsed ' + str(len(list_output)) + ' domains')
+    verbose('\t\t:: Parsed ' + str(len(list_output)) + ' domains')
 
     if len(list_output) < 1:
-        print('\t\t:: 0 domains? Check configuration')
+        verbose('\t\t:: 0 domains? Check configuration')
 
     try:
         with open(location + filename, 'w') as f:
@@ -122,7 +128,7 @@ def process_list(list_id, contents):
             f.close()
 
     except IOError as e:
-        print('\t:: Error:', os.strerror(e.errno))
+        verbose('\t:: Error:', os.strerror(e.errno))
 
     return len(list_output)
 
@@ -131,17 +137,17 @@ def main():
     list_count = 0
     dl_count = 0
 
-    print('\t:: Downloading recent root.hints...')
+    verbose('\t:: Downloading recent root.hints...')
     subprocess.run(['wget', '-qO', '/var/lib/unbound/root.hints',
                             'https://www.internic.net/domain/named.root'])
 
     list_json = sys.path[0] + '/blocklist.json'
 
     for key, value in sorted(json.load(open(list_json)).items()):
-        print(('\n' + key))
+        verbose(('\n' + key))
 
         if is_recent(value['id']):
-            print('\t:: Skipping recent download')
+            verbose('\t:: Skipping recent download')
             time.sleep(0.5)
         else:
             list_raw = download_list(value['url'])
@@ -151,20 +157,27 @@ def main():
                 dl_count += 1
 
     if dl_count > 0:
-        print('\nTotal blocklist size: ' + str(list_count) + '\n')
+        verbose('\nTotal blocklist size: ' + str(list_count) + '\n')
 
-        print('Checking configuration...')
+        verbose('Checking configuration...')
         os.system('/usr/sbin/unbound-checkconf')
 
-        print('\nRestarting \'unbound\' service...')
+        verbose('\nRestarting \'unbound\' service...')
         os.system('systemctl restart unbound')
     else:
-        print('\nNo changes...')
+        verbose('\nNo changes...')
 
-    exit('\n')
+    if is_verbose:
+        exit('\n')
+    else:
+        exit()
 
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        if sys.argv[1] in ['-q', '--quiet']:
+            is_verbose = False
+
     if not os.path.isfile('/usr/sbin/unbound-checkconf'):
         exit('\n\t:: Error: Requires unbound service to run\n')
 
@@ -174,5 +187,5 @@ if __name__ == '__main__':
     if not os.path.exists(location):
         os.makedirs(location)
 
-    print('\nNo Frills Adblocker')
+    verbose('\nNo Frills Adblocker')
     main()
