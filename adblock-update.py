@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 
@@ -130,7 +131,13 @@ def main():
     list_count = 0
     dl_count = 0
 
-    for key, value in sorted(json.load(open(sys.path[0] + '/blocklist.json')).items()):
+    print('\t:: Downloading recent root.hints...')
+    subprocess.run(['wget', '-qO', '/var/lib/unbound/root.hints',
+                            'https://www.internic.net/domain/named.root'])
+
+    list_json = sys.path[0] + '/blocklist.json'
+
+    for key, value in sorted(json.load(open(list_json)).items()):
         print(('\n' + key))
 
         if is_recent(value['id']):
@@ -167,4 +174,5 @@ if __name__ == '__main__':
     if not os.path.exists(location):
         os.makedirs(location)
 
+    print('\nNo Frills Adblocker')
     main()
