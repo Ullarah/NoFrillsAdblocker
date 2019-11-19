@@ -22,9 +22,9 @@ location = unbound_dir + '/unbound.conf.d/adblock/'
 user_agent = 'NoFrillsAdblocker; github; pass'
 
 
-def verbose(message):
+def verbose(*message):
     if not quiet:
-        print(message)
+        print(' '.join(message))
 
 
 def is_valid_hostname(hostname):
@@ -186,32 +186,32 @@ if __name__ == '__main__':
     a_parser = argparse.ArgumentParser(prog='adblock-update')
 
     a_parser.add_argument('-q', '--quiet',
-                          action='store_true',
-                          help='Quiet output')
+                            action='store_true',
+                            help='Quiet output')
 
     a_parser.add_argument('-f', '--force',
-                          action='store_true',
-                          help='Force blocklist download')
+                            action='store_true',
+                            help='Force blocklist download')
 
     a_parser.add_argument('-Sh', '--skip-hints',
-                          action='store_true',
-                          help='Skip root.hints download')
+                            action='store_true',
+                            help='Skip root.hints download')
 
     a_parser.add_argument('-Su', '--skip-unbound',
-                          action='store_true',
-                          help='Skip unbound service update')
+                            action='store_true',
+                            help='Skip unbound service update')
 
     a_parser.add_argument('-Au', '--alt-unbound',
-                          action='store', type=str,
-                          help='Use alternative unbound directory')
+                            action='store', type=str,
+                            help='Use alternative unbound directory')
 
     a_parser.add_argument('-Ab', '--alt-blocklist',
-                          action='store', type=str,
-                          help='Use alternative blocklist json file')
+                            action='store', type=str,
+                            help='Use alternative blocklist json file')
 
     a_parser.add_argument('-u', '--user-agent',
-                          action='store', type=str,
-                          help='Use a different user agent for downloads')
+                            action='store', type=str,
+                            help='Use a different user agent for downloads')
 
     args = a_parser.parse_args()
 
