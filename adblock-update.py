@@ -3,7 +3,10 @@
 import json
 import os
 import re
+import sys
+import time
 
+from math import floor
 from urllib import error, request
 
 
@@ -24,6 +27,15 @@ def is_valid_hostname(hostname):
     return all(allowed.match(x) for x in hostname.split("."))
 
 
+def is_recent(list_id):
+    filename = location + list_id + '.domain.conf'
+
+    if os.path.isfile(filename):
+        return floor(time.time() - os.path.getmtime(filename)) < 604800
+
+    return False
+
+
 def download_list(url):
     print(('\t:: URL Download: ' + url))
 
@@ -41,12 +53,12 @@ def download_list(url):
         decode = False
         if hasattr(e, 'reason'):
             print('\t:: Failed to reach a server')
-            print('\t:: Reason:', e.reason, '\n')
+            print('\t:: Reason:', e.reason)
         elif hasattr(e, 'code'):
             print('\t:: The server could not fulfill the request')
-            print('\t:: Error:', e.code, '\n')
+            print('\t:: Error:', e.code)
         else:
-            print('\t:: Unknown Error\n')
+            print('\t:: Unknown Error')
 
     if decode:
         try:
@@ -116,22 +128,31 @@ def process_list(list_id, contents):
 
 def main():
     list_count = 0
+    dl_count = 0
 
-    for key, value in sorted(json.load(open('blocklist.json')).items()):
+    for key, value in sorted(json.load(open(sys.path[0] + '/blocklist.json')).items()):
         print(('\n' + key))
-        list_raw = download_list(value['url'])
 
-        if list_raw is not None:
-            list_processed = process_list(value['id'], list_raw)
-            list_count += list_processed
+        if is_recent(value['id']):
+            print('\t:: Skipping recent download')
+            time.sleep(0.5)
+        else:
+            list_raw = download_list(value['url'])
+            if list_raw is not None:
+                list_processed = process_list(value['id'], list_raw)
+                list_count += list_processed
+                dl_count += 1
 
-    print('\nTotal blocklist size: ' + str(list_count) + '\n')
+    if dl_count > 0:
+        print('\nTotal blocklist size: ' + str(list_count) + '\n')
 
-    print('Checking configuration...')
-    os.system('/usr/sbin/unbound-checkconf')
+        print('Checking configuration...')
+        os.system('/usr/sbin/unbound-checkconf')
 
-    print('\nRestarting \'unbound\' service...')
-    os.system('systemctl restart unbound')
+        print('\nRestarting \'unbound\' service...')
+        os.system('systemctl restart unbound')
+    else:
+        print('\nNo changes...')
 
     exit('\n')
 
