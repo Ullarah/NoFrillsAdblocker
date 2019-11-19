@@ -20,6 +20,7 @@ unbound_dir = '/etc/unbound'
 list_json = sys.path[0] + '/blocklist.json'
 location = unbound_dir + '/unbound.conf.d/adblock/'
 user_agent = 'NoFrillsAdblocker; github; pass'
+root_hints_url = 'https://www.internic.net/domain/named.root'
 
 
 def verbose(*message):
@@ -144,7 +145,7 @@ def main():
     if not skip_hints:
         verbose('\t:: Downloading recent root.hints...')
         subprocess.run(['wget', '-qO', '/var/lib/unbound/root.hints',
-                                'https://www.internic.net/domain/named.root'])
+                                root_hints_url])
 
     if not os.path.isfile(list_json):
         verbose('\n\t:: Error: Blocklist file does not exist at:')
@@ -187,31 +188,35 @@ if __name__ == '__main__':
 
     a_parser.add_argument('-q', '--quiet',
                             action='store_true',
-                            help='Quiet output')
+                            help='quiet output')
 
     a_parser.add_argument('-f', '--force',
                             action='store_true',
-                            help='Force blocklist download')
+                            help='force blocklist download')
 
     a_parser.add_argument('-Sh', '--skip-hints',
                             action='store_true',
-                            help='Skip root.hints download')
+                            help='skip root.hints download')
 
     a_parser.add_argument('-Su', '--skip-unbound',
                             action='store_true',
-                            help='Skip unbound service update')
+                            help='skip unbound service update')
 
     a_parser.add_argument('-Au', '--alt-unbound',
                             action='store', type=str,
-                            help='Use alternative unbound directory')
+                            help='use alternative unbound directory')
 
     a_parser.add_argument('-Ab', '--alt-blocklist',
                             action='store', type=str,
-                            help='Use alternative blocklist json file')
+                            help='use alternative blocklist json file')
+
+    a_parser.add_argument('-Ah', '--alt-hints-url',
+                            action='store', type=str,
+                            help='use alternative root hints url')
 
     a_parser.add_argument('-u', '--user-agent',
                             action='store', type=str,
-                            help='Use a different user agent for downloads')
+                            help='use a different user agent for downloads')
 
     args = a_parser.parse_args()
 
@@ -225,6 +230,9 @@ if __name__ == '__main__':
 
     if args.alt_blocklist is not None:
         list_json = args.alt_blocklist
+
+    if args.alt_hints_url is not None:
+         root_hints_url = args.alt_hints_url
 
     if args.user_agent is not None:
         user_agent = args.user_agent
