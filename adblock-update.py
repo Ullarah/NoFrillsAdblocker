@@ -116,7 +116,7 @@ def process_list(list_id, contents):
     verbose('\t\t:: Parsed ' + str(len(list_output)) + ' domains')
 
     if len(list_output) < 1:
-        verbose('\t\t:: 0 domains? Check configuration')
+        verbose('\t\t:: 0 domains? Check URL for errors')
 
     try:
         with open(location + filename, 'w') as f:
@@ -175,10 +175,10 @@ def main():
     else:
         verbose('\nNo changes...')
 
-    if is_verbose:
-        exit('\n')
-    else:
+    if quiet:
         exit()
+    else:
+        exit('\n')
 
 
 if __name__ == '__main__':
