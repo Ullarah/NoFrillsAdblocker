@@ -1,5 +1,6 @@
 #!/bin/python
 
+import argparse
 import json
 import os
 import re
@@ -11,12 +12,18 @@ from math import floor
 from urllib import error, request
 
 
-is_verbose = True
-location = '/etc/unbound/unbound.conf.d/adblock/'
+quiet = False
+force = False
+skip_hints = False
+skip_unbound = False
+unbound_dir = '/etc/unbound'
+list_json = sys.path[0] + '/blocklist.json'
+location = unbound_dir + '/unbound.conf.d/adblock/'
+user_agent = 'NoFrillsAdblocker; github; pass'
 
 
 def verbose(message):
-    if is_verbose:
+    if not quiet:
         print(message)
 
 
@@ -24,10 +31,7 @@ def is_valid_hostname(hostname):
     if hostname.endswith("."):
         hostname = hostname[:-1]
 
-    if len(hostname) > 253:
-        return False
-
-    if re.match(r"[\d.]+$", hostname):
+    if len(hostname) > 253 or re.match(r"[\d.]+$", hostname):
         return False
 
     allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
@@ -47,7 +51,7 @@ def download_list(url):
     verbose(('\t:: URL Download: ' + url))
 
     req = request.Request(url)
-    req.add_header('User-Agent', 'NoFrillsAdblocker; github; pass')
+    req.add_header('User-Agent', user_agent)
 
     contents = ''
     decode = True
@@ -137,18 +141,21 @@ def main():
     list_count = 0
     dl_count = 0
 
-    verbose('\t:: Downloading recent root.hints...')
-    subprocess.run(['wget', '-qO', '/var/lib/unbound/root.hints',
-                            'https://www.internic.net/domain/named.root'])
+    if not skip_hints:
+        verbose('\t:: Downloading recent root.hints...')
+        subprocess.run(['wget', '-qO', '/var/lib/unbound/root.hints',
+                                'https://www.internic.net/domain/named.root'])
 
-    list_json = sys.path[0] + '/blocklist.json'
+    if not os.path.isfile(list_json):
+        verbose('\n\t:: Error: Blocklist file does not exist at:')
+        exit('\t:: ' + list_json + '\n')
 
     for key, value in sorted(json.load(open(list_json)).items()):
         verbose(('\n' + key))
 
-        if is_recent(value['id']):
+        if is_recent(value['id']) and not force:
             verbose('\t:: Skipping recent download')
-            time.sleep(0.5)
+            time.sleep(0.25)
         else:
             list_raw = download_list(value['url'])
             if list_raw is not None:
@@ -159,11 +166,12 @@ def main():
     if dl_count > 0:
         verbose('\nTotal blocklist size: ' + str(list_count) + '\n')
 
-        verbose('Checking configuration...')
-        os.system('/usr/sbin/unbound-checkconf')
+        if not skip_unbound:
+            verbose('Checking configuration...')
+            os.system('/usr/sbin/unbound-checkconf')
 
-        verbose('\nRestarting \'unbound\' service...')
-        os.system('systemctl restart unbound')
+            verbose('\nRestarting \'unbound\' service...')
+            os.system('systemctl restart unbound')
     else:
         verbose('\nNo changes...')
 
@@ -174,11 +182,54 @@ def main():
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        if sys.argv[1] in ['-q', '--quiet']:
-            is_verbose = False
 
-    if not os.path.isfile('/usr/sbin/unbound-checkconf'):
+    a_parser = argparse.ArgumentParser(prog='adblock-update')
+
+    a_parser.add_argument('-q', '--quiet',
+                          action='store_true',
+                          help='Quiet output')
+
+    a_parser.add_argument('-f', '--force',
+                          action='store_true',
+                          help='Force blocklist download')
+
+    a_parser.add_argument('-Sh', '--skip-hints',
+                          action='store_true',
+                          help='Skip root.hints download')
+
+    a_parser.add_argument('-Su', '--skip-unbound',
+                          action='store_true',
+                          help='Skip unbound service update')
+
+    a_parser.add_argument('-Au', '--alt-unbound',
+                          action='store', type=str,
+                          help='Use alternative unbound directory')
+
+    a_parser.add_argument('-Ab', '--alt-blocklist',
+                          action='store', type=str,
+                          help='Use alternative blocklist json file')
+
+    a_parser.add_argument('-u', '--user-agent',
+                          action='store', type=str,
+                          help='Use a different user agent for downloads')
+
+    args = a_parser.parse_args()
+
+    quiet = args.quiet
+    force = args.force
+    skip_hints = args.skip_hints
+    skip_unbound = args.skip_unbound
+
+    if args.alt_unbound is not None:
+        unbound_dir = args.alt_unbound
+
+    if args.alt_blocklist is not None:
+        list_json = args.alt_blocklist
+
+    if args.user_agent is not None:
+        user_agent = args.user_agent
+
+    if not os.path.exists(unbound_dir):
         exit('\n\t:: Error: Requires unbound service to run\n')
 
     if os.geteuid() != 0:
