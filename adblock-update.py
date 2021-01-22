@@ -83,7 +83,7 @@ def process_list(list_id, contents):
     if contents is None:
         return None
 
-    redirect = '0.0.0.0'
+    redirect = 'always_nxdomain'
     filename = list_id + '.domain.conf'
     output = str(contents)
 
@@ -122,13 +122,8 @@ def process_list(list_id, contents):
     try:
         with open(location + filename, 'w') as f:
 
-            f.write('server:\n')
-
             for item in list_output:
-                f.write('local-data: \"')
-                f.write("%s" % item)
-                f.write(' A ' + redirect + '\"')
-                f.write('\n')
+                f.write('local-zone: "{}" {}\n'.format(item, redirect))
 
             f.close()
 
@@ -144,7 +139,8 @@ def main():
 
     if not skip_hints:
         verbose('\t:: Downloading recent root.hints...')
-        subprocess.run(['wget', '-qO', '/var/lib/unbound/root.hints',
+        subprocess.run(['wget', '-qO',
+                                '{}/unbound/root.hints'.format(unbound_dir),
                                 root_hints_url])
 
     if not os.path.isfile(list_json):
@@ -172,7 +168,7 @@ def main():
             os.system('/usr/sbin/unbound-checkconf')
 
             verbose('\nRestarting \'unbound\' service...')
-            os.system('systemctl restart unbound')
+            os.system('service unbound restart')
     else:
         verbose('\nNo changes...')
 
